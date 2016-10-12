@@ -1,4 +1,11 @@
-# TODO: make get_clues dimension-ambiguous
+CHECK_INC = 0
+CHECK_FAIL = 1
+CHECK_OK = 2
+
+GRID_EMPTY = 0
+GRID_FILL = 1
+GRID_BLOCK = 2
+
 
 class Mut:
     def __init__(self, val):
@@ -9,7 +16,7 @@ class Mut:
         self.val = val
 
 
-def get_clues(grid):
+def get_clues(grid): # TODO: make get_clues dimension-ambiguous
     """Produce the row and column clues for a nonogram grid"""
     height = len(grid)
     width = len(grid[0])
@@ -54,9 +61,40 @@ def print_grid(grid):
 
 
 def insert_range(grid, side, line, first, last):
-    print first, last
     for i in xrange(first, last+1):
         grid[side][line][i].set(1)
+
+
+def check_line(grid, clues, side, line):
+    clue_i = 0
+    cell_i = 0
+    state = CHECK_OK
+    while cell_i < len(grid[side][line]):
+        if grid[side][line][cell_i] == GRID_FILL:
+            if clue_i >= len(clues[side][line]):
+                return CHECK_FAIL
+            for cell_i in xrange(cell_i+1, cell_i+clues[side][line][clue_i]):
+                if grid[side][line][cell_i] != GRID_FILL:
+                    state = CHECK_INC
+            clue_i += 1
+            cell_i += 1
+            if (cell_i != len(grid[side][line]) and
+                grid[side][line][cell_i] == GRID_FILL):
+                return CHECK_FAIL
+        else:
+            cell_i += 1
+    if clue_i < len(clues[side][line]) - 1:
+        return CHECK_INC
+    return state
+
+def check_all(grid, clues):
+    for side in xrange(len(grid)):
+        for line in xrange(len(grid[side])):
+            print check_line(grid, clues, side, line)
+
+
+def find_impossible(grid, clues, side, line):
+    pass
 
 
 def method_overlap(grid, clues, side, line):
@@ -68,6 +106,12 @@ def method_overlap(grid, clues, side, line):
     right as possible: ---ooooo
     overlap:           ---oo---
     the middle two must be filled
+
+    e.g.
+    1 3 2 ----------
+          --ooo----- # space for 1 and blank
+          ----ooo--- # space for 2 and blank
+          ----o----- # overlap
     """
 
     for c in xrange(len(clues[side][line])):
